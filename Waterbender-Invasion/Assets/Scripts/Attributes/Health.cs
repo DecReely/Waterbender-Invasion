@@ -28,9 +28,10 @@ namespace WaterbenderInvasion.Attributes
             GetComponent<BaseStats>().OnLevelUp -= RegenerateHealth;
         }
         
+        // TODO: Hatalı olabilir?
         private void RegenerateHealth()
         {
-            float regenerateHealthPoints = GetComponent<BaseStats>().GetStat(Stat.Health);
+            float regenerateHealthPoints = (GetComponent<BaseStats>().GetStat(Stat.Health)) * ( 1 + regenerationPercentage / 100);
 
             _healthPoints = Mathf.Max(_healthPoints, regenerateHealthPoints);
         }

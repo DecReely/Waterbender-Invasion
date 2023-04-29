@@ -1,8 +1,10 @@
+using System;
 using UnityEngine;
+using WaterbenderInvasion.Control;
 
 namespace WaterbenderInvasion.Combat
 {
-    public class WeaponPickup : MonoBehaviour
+    public class WeaponPickup : MonoBehaviour, IRaycastable
     {
         [SerializeField] private Weapon weapon = null;
 
@@ -10,9 +12,28 @@ namespace WaterbenderInvasion.Combat
         {
             if (other.gameObject.CompareTag("Player"))
             {
-                other.GetComponent<Fighter>().EquipWeapon(weapon);
-                Destroy(gameObject);
+                Pickup(other.GetComponent<Fighter>());
             }
+        }
+        private void Pickup(Fighter fighter)
+        {
+
+            fighter.GetComponent<Fighter>().EquipWeapon(weapon);
+            Destroy(gameObject);
+        }
+        public CursorType GetCursorType()
+        {
+            return CursorType.Pickup;
+        }
+        public bool HandleRaycast(PlayerController controller)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                Pickup(controller.GetComponent<Fighter>());
+            }
+            return true;
+            
+            
         }
     }
 }
