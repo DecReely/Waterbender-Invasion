@@ -15,5 +15,10 @@ namespace WaterbenderInvasion.Core
             }
             currentAction = action;
         }
+
+        public void CancelCurrentAction()
+        {
+            StartAction(null);
+        }
     }
 }

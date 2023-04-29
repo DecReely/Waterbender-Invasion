@@ -1,4 +1,6 @@
 using UnityEngine;
+using WaterbenderInvasion.Attributes;
+using WaterbenderInvasion.Core;
 
 namespace WaterbenderInvasion.Combat
 {

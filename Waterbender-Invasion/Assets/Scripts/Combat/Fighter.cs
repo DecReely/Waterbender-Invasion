@@ -1,28 +1,40 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using WaterbenderInvasion.Attributes;
 using WaterbenderInvasion.Movement;
 using WaterbenderInvasion.Core;
+using WaterbenderInvasion.Stats;
 
 namespace WaterbenderInvasion.Combat
 {
-    public class Fighter : MonoBehaviour, IAction
+    public class Fighter : MonoBehaviour, IAction, IModifierProvider
     {
-        [SerializeField] private float weaponRange = 2f;
         [SerializeField] private float timeBetweenAttacks = 1f;
-        [SerializeField] private float weaponDamage = 5f;
+        [SerializeField] private Transform rightHandTransform;
+        [SerializeField] private Transform leftHandTransform;
+        [SerializeField] private string defaultWeaponName = "Unarmed";
 
-        private Health target;
-        private float timeSinceLastAttack = 0;
+        private Health _target = null;
+        private Weapon _currentWeapon;
+        private float _timeSinceLastAttack = Mathf.Infinity;
+
+        private void Start()
+        {
+            Weapon weapon = Resources.Load<Weapon>(defaultWeaponName);
+            EquipWeapon(weapon);
+        }
 
         private void Update()
         {
-            timeSinceLastAttack += Time.deltaTime;
+            _timeSinceLastAttack += Time.deltaTime;
             
-            if (target == null) return;
-            if (target.IsDead()) return;
+            if (_target == null) return;
+            if (_target.IsDead()) return;
             
             if (!IsInRange())
             {
-                GetComponent<Mover>().MoveTo(target.transform.position);
+                GetComponent<Mover>().MoveTo(_target.transform.position, 1f);
             }
             else
             {
@@ -30,32 +42,54 @@ namespace WaterbenderInvasion.Combat
                 AttackBehaviour();
             }
         }
+        
+        public void EquipWeapon(Weapon weapon)
+        {
+            _currentWeapon = weapon;
+            Animator animator = GetComponent<Animator>();
+            _currentWeapon.Spawn(rightHandTransform, leftHandTransform, animator);
+        }
 
         private void AttackBehaviour()
         {
-            transform.LookAt(target.transform);
+            transform.LookAt(_target.transform);
             
-            if (timeSinceLastAttack > timeBetweenAttacks)
+            if (_timeSinceLastAttack > timeBetweenAttacks)
             {
                 TriggerAttack();
-                timeSinceLastAttack = 0;
+                _timeSinceLastAttack = 0;
             }
         }
 
         // Animation Event
         void Hit()
         {
-            if (target == null) return;
+            if (_target == null) return;
+
+            var damage = GetComponent<BaseStats>().GetStat(Stat.Damage);
             
-            target.TakeDamage(weaponDamage);
+            if (_currentWeapon.HasProjectile())
+            {
+                _currentWeapon.LaunchProjectile(rightHandTransform, leftHandTransform, _target, gameObject, damage);
+            }
+            else
+            {
+                _target.TakeDamage(gameObject, damage);
+            }
+        }
+
+        // Animation Event? (Yayı eklemedim ama projectile animation event adı olması gerek shoot yerine)
+        void Shoot()
+        {
+            Hit();
         }
 
         private bool IsInRange()
         {
-            return Vector3.Distance(transform.position, target.transform.position) < weaponRange;
+            return Vector3.Distance(transform.position, _target.transform.position) < _currentWeapon.GetRange();
         }
 
-        public bool CanAttack(CombatTarget combatTarget)
+        public bool CanAttack(GameObject combatTarget)
         {
             if (combatTarget == null) return false;
             
@@ -63,16 +97,16 @@ namespace WaterbenderInvasion.Combat
             return targetToTest != null && !targetToTest.IsDead();
         }
 
-        public void Attack(CombatTarget combatTarget)
+        public void Attack(GameObject combatTarget)
         {
             GetComponent<ActionScheduler>().StartAction(this);
-            target = combatTarget.GetComponent<Health>();
+            _target = combatTarget.GetComponent<Health>();
         }
 
         public void Cancel()
         {
-            TriggerStopAttack();
-            target = null;
+            StopTriggeringAttack();
+            _target = null;
         }
 
         private void TriggerAttack()
@@ -81,10 +115,31 @@ namespace WaterbenderInvasion.Combat
             GetComponent<Animator>().SetTrigger("attack");
         }
         
-        private void TriggerStopAttack()
+        private void StopTriggeringAttack()
         {
             GetComponent<Animator>().ResetTrigger("attack");
             GetComponent<Animator>().SetTrigger("stopAttack");
         }
+        
+        public IEnumerable<float> GetAdditiveModifiers(Stat stat)
+        {
+            if (stat == Stat.Damage)
+            {
+                yield return _currentWeapon.GetDamage();
+            }
+        }
+        public IEnumerable<float> GetPercentageModifiers(Stat stat)
+        {
+            if (stat == Stat.Damage)
+            {
+                yield return _currentWeapon.GetPercentageBonus();
+            }
+        }
+
+        public Health GetTarget()
+        {
+            return _target;
+        }
+        
     }
 }

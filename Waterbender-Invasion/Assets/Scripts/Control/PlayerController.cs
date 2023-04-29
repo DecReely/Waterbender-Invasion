@@ -1,13 +1,24 @@
 using UnityEngine;
+using WaterbenderInvasion.Attributes;
 using WaterbenderInvasion.Movement;
 using WaterbenderInvasion.Combat;
+using WaterbenderInvasion.Core;
 
 namespace WaterbenderInvasion.Control
 {
     public class PlayerController : MonoBehaviour
     {
+        private Health _health;
+
+        private void Start()
+        {
+            _health = GetComponent<Health>();
+        }
+
         private void Update()
         {
+            if (_health.IsDead()) return;
+
             if (InteractWithCombat()) return;
             if (InteractWithMovement()) return;
             
@@ -22,11 +33,13 @@ namespace WaterbenderInvasion.Control
             {
                 CombatTarget target = hit.transform.GetComponent<CombatTarget>();
 
-                if (!GetComponent<Fighter>().CanAttack(target)) continue;
-
+                if (target == null) continue;
+                
+                if (!GetComponent<Fighter>().CanAttack(target.gameObject)) continue;
+                
                 if (Input.GetMouseButtonDown(0))
                 {
-                    GetComponent<Fighter>().Attack(target);
+                    GetComponent<Fighter>().Attack(target.gameObject);
                 }
 
                 return true;
@@ -43,7 +56,7 @@ namespace WaterbenderInvasion.Control
             {
                 if (Input.GetMouseButton(0))
                 {
-                    GetComponent<Mover>().StartMoveAction(hit.point);
+                    GetComponent<Mover>().StartMoveAction(hit.point, 1f);
                 }
 
                 return true;
