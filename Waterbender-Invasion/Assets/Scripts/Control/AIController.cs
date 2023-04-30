@@ -7,10 +7,12 @@ using WaterbenderInvasion.Movement;
 
 namespace WaterbenderInvasion.Control
 {
-    public class AIControl : MonoBehaviour
+    public class AIController : MonoBehaviour
     {
         [SerializeField] private float chaseDistance;
         [SerializeField] private float suspicionTime = 3f;
+        [SerializeField] private float agroCooldownTime = 5f;
+        [SerializeField] private float shoutDistance = 5f;
         [SerializeField] private PatrolPath patrolPath;
         [SerializeField] private float waypointTolerance = 1f;
         [SerializeField] private float waypointDwellTime = 1f;
@@ -24,6 +26,7 @@ namespace WaterbenderInvasion.Control
         private Vector3 _guardPosition;
         private float _timeSinceLastSawPlayer = Mathf.Infinity;
         private float _timeSinceArrivedAtWaypoint = Mathf.Infinity;
+        private float _timeSinceAggrevated = Mathf.Infinity;
         private int _currentWaypointIndex = 0;
 
         private void Awake()
@@ -44,7 +47,7 @@ namespace WaterbenderInvasion.Control
         {
             if (_health.IsDead()) return;
             
-            if (InAttackRange(_player) && _fighter.CanAttack(_player))
+            if (IsAggravated(_player) && _fighter.CanAttack(_player))
             {
                 AttackBehaviour();
             }
@@ -60,10 +63,29 @@ namespace WaterbenderInvasion.Control
             UpdateTimers();
         }
 
+        public void AggrevateNearbyEnemies()
+        {
+            RaycastHit[] hits = Physics.SphereCastAll(transform.position, shoutDistance, Vector3.up, 0);
+
+            foreach (RaycastHit hit in hits)
+            {
+                AIController ai = hit.collider.GetComponent<AIController>();
+                if (ai == null) return;
+
+                ai.Aggrevate();
+            }
+        }
+        
+        public void Aggrevate()
+        {
+            _timeSinceAggrevated = 0;
+        }
+
         private void UpdateTimers()
         {
             _timeSinceLastSawPlayer += Time.deltaTime;
             _timeSinceArrivedAtWaypoint += Time.deltaTime;
+            _timeSinceAggrevated += Time.deltaTime;
         }
 
         private void PatrolBehaviour()
@@ -114,10 +136,10 @@ namespace WaterbenderInvasion.Control
             _fighter.Attack(_player);
         }
 
-        private bool InAttackRange(GameObject player)
+        private bool IsAggravated(GameObject player)
         {
             float distanceToPlayer = Vector3.Distance(player.transform.position, transform.position);
-            return distanceToPlayer <= chaseDistance;
+            return distanceToPlayer <= chaseDistance || _timeSinceAggrevated < agroCooldownTime;
         }
 
         private void OnDrawGizmos()

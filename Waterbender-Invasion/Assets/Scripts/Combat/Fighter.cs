@@ -32,7 +32,7 @@ namespace WaterbenderInvasion.Combat
             if (_target == null) return;
             if (_target.IsDead()) return;
             
-            if (!IsInRange())
+            if (!IsInRange(_target.transform))
             {
                 GetComponent<Mover>().MoveTo(_target.transform.position, 1f);
             }
@@ -84,14 +84,15 @@ namespace WaterbenderInvasion.Combat
             Hit();
         }
 
-        private bool IsInRange()
+        private bool IsInRange(Transform targetTransform)
         {
-            return Vector3.Distance(transform.position, _target.transform.position) < _currentWeapon.GetRange();
+            return Vector3.Distance(transform.position, targetTransform.position) < _currentWeapon.GetRange();
         }
 
         public bool CanAttack(GameObject combatTarget)
         {
             if (combatTarget == null) return false;
+            if (!GetComponent<Mover>().CanMoveTo(combatTarget.transform.position) && IsInRange(_target.transform)) return false;
             
             Health targetToTest = combatTarget.GetComponent<Health>();
             return targetToTest != null && !targetToTest.IsDead();

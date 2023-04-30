@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 using WaterbenderInvasion.Core;
 using WaterbenderInvasion.Stats;
 
@@ -8,7 +9,11 @@ namespace WaterbenderInvasion.Attributes
     public class Health : MonoBehaviour
     {
         [SerializeField] private float regenerationPercentage = 70;
+        [SerializeField] private TakeDamageEvent takeDamage; 
         
+        [System.Serializable]
+        public class TakeDamageEvent : UnityEvent<float> { }
+
         private float _healthPoints = -1;
         private bool _isDead;
 
@@ -39,11 +44,15 @@ namespace WaterbenderInvasion.Attributes
         public void TakeDamage(GameObject instigator, float damage)
         {
             _healthPoints = Mathf.Max(_healthPoints - damage, 0);
-
+            
             if (_healthPoints == 0)
             {
                 Die();
                 AwardExperience(instigator);
+            }
+            else
+            {
+                takeDamage.Invoke(damage);
             }
         }
 
@@ -59,7 +68,12 @@ namespace WaterbenderInvasion.Attributes
         
         public float GetPercentage()
         {
-            return 100 * (_healthPoints / GetComponent<BaseStats>().GetStat(Stat.Health));
+            return 100 * GetFraction();
+        }
+        
+        public float GetFraction()
+        {
+            return _healthPoints / GetComponent<BaseStats>().GetStat(Stat.Health);
         }
 
         private void Die()
