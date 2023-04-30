@@ -1,20 +1,13 @@
-using System;
-using UnityEngine;
-using UnityEngine.AI;
-using UnityEngine.EventSystems;
-using WaterbenderInvasion.Attributes;
 using WaterbenderInvasion.Movement;
+using UnityEngine;
+using System;
+using UnityEngine.EventSystems;
+using UnityEngine.AI;
 
 namespace WaterbenderInvasion.Control
 {
     public class PlayerController : MonoBehaviour
     {
-        [SerializeField] private float spherecastRadius = 1f;
-        [SerializeField] private CursorMapping[] cursorMappings;
-        [SerializeField] private float maxNavMeshProjectionDistance = 1f;
-
-        private Health _health;
-
         [System.Serializable]
         public struct CursorMapping
         {
@@ -23,26 +16,26 @@ namespace WaterbenderInvasion.Control
             public Vector2 hotspot;
         }
 
-        private void Awake()
-        {
-            _health = GetComponent<Health>();
-        }
+        [SerializeField] CursorMapping[] cursorMappings = null;
+        [SerializeField] float maxNavMeshProjectionDistance = 1f;
+        [SerializeField] float raycastRadius = 1f;
+
+        bool movementStarted = false;
 
         private void Update()
         {
-            if (InteractWithUI()) return;
-            if (_health.IsDead())
+            if (Input.GetMouseButtonUp(0))
             {
-                SetCursor(CursorType.None);
-                return;
+                movementStarted = false;
             }
 
+            if (InteractWithUI()) return;
             if (InteractWithComponent()) return;
             if (InteractWithMovement()) return;
-            
+
             SetCursor(CursorType.None);
         }
-        
+
         private bool InteractWithUI()
         {
             if (EventSystem.current.IsPointerOverGameObject())
@@ -50,18 +43,15 @@ namespace WaterbenderInvasion.Control
                 SetCursor(CursorType.UI);
                 return true;
             }
-            
             return false;
         }
-        
+
         private bool InteractWithComponent()
         {
             RaycastHit[] hits = RaycastAllSorted();
-
             foreach (RaycastHit hit in hits)
             {
                 IRaycastable[] raycastables = hit.transform.GetComponents<IRaycastable>();
-                
                 foreach (IRaycastable raycastable in raycastables)
                 {
                     if (raycastable.HandleRaycast(this))
@@ -71,50 +61,60 @@ namespace WaterbenderInvasion.Control
                     }
                 }
             }
-
             return false;
         }
 
-        private RaycastHit[] RaycastAllSorted()
+        RaycastHit[] RaycastAllSorted()
         {
-            RaycastHit[] hits = Physics.SphereCastAll(GetMouseRay(), spherecastRadius);
+            RaycastHit[] hits = Physics.SphereCastAll(GetMouseRay(), raycastRadius);
             float[] distances = new float[hits.Length];
             for (int i = 0; i < hits.Length; i++)
             {
                 distances[i] = hits[i].distance;
             }
             Array.Sort(distances, hits);
-            
             return hits;
         }
 
         private bool InteractWithMovement()
         {
-            bool hasHit = RaycastNavMesh(out Vector3 target);
-            
+            Vector3 target;
+            bool hasHit = RaycastNavMesh(out target);
             if (hasHit)
             {
                 if (!GetComponent<Mover>().CanMoveTo(target)) return false;
-                if (Input.GetMouseButton(0))
+
+                if (Input.GetMouseButtonDown(0))
+                {
+                    movementStarted = true;
+                }
+                if (Input.GetMouseButton(0) && movementStarted)
                 {
                     GetComponent<Mover>().StartMoveAction(target, 1f);
                 }
-
                 SetCursor(CursorType.Movement);
                 return true;
             }
-
             return false;
         }
 
         private bool RaycastNavMesh(out Vector3 target)
         {
             target = new Vector3();
+
+            RaycastHit hit;
+            bool hasHit = Physics.Raycast(GetMouseRay(), out hit);
             
-            bool hasHit = Physics.Raycast(GetMouseRay(), out RaycastHit hit);
+            Debug.Log("HAS HIT: " + hasHit);
+            
             if (!hasHit) return false;
 
-            bool hasCastToNavMesh = NavMesh.SamplePosition(hit.point, out NavMeshHit navMeshHit, maxNavMeshProjectionDistance, NavMesh.AllAreas);
+            NavMeshHit navMeshHit;
+            bool hasCastToNavMesh = NavMesh.SamplePosition(
+                hit.point, out navMeshHit, maxNavMeshProjectionDistance, NavMesh.AllAreas);
+            
+            Debug.Log("HAS CAST TO NAVMESH: " + hasCastToNavMesh);
+
             if (!hasCastToNavMesh) return false;
 
             target = navMeshHit.position;
@@ -124,23 +124,22 @@ namespace WaterbenderInvasion.Control
 
         private void SetCursor(CursorType type)
         {
-            CursorMapping cursorMapping = GetCursorMapping(type);
-            Cursor.SetCursor(cursorMapping.texture, cursorMapping.hotspot, CursorMode.Auto);
+            CursorMapping mapping = GetCursorMapping(type);
+            Cursor.SetCursor(mapping.texture, mapping.hotspot, CursorMode.Auto);
         }
 
         private CursorMapping GetCursorMapping(CursorType type)
         {
-            foreach (CursorMapping cursorMapping in cursorMappings)
+            foreach (CursorMapping mapping in cursorMappings)
             {
-                if (cursorMapping.type == type)
+                if (mapping.type == type)
                 {
-                    return cursorMapping;
+                    return mapping;
                 }
             }
-
             return cursorMappings[0];
         }
-        
+
         private static Ray GetMouseRay()
         {
             return Camera.main.ScreenPointToRay(Input.mousePosition);

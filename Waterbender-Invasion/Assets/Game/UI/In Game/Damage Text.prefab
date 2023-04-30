@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 388969818297037402}
   - component: {fileID: 6422782583164603695}
   - component: {fileID: 2504520990441780372}
-  - component: {fileID: 3585488106003868609}
+  - component: {fileID: 923785932783902635}
   m_Layer: 5
   m_Name: Damage Text
   m_TagString: Untagged
@@ -87,7 +87,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 795.1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &2199286927385222204
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -146,7 +146,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damageText: {fileID: 601861797431485054}
---- !u!114 &3585488106003868609
+--- !u!114 &923785932783902635
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -155,7 +155,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 388902868681397412}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b548c41b23fa7e9499b80c6b55427536, type: 3}
+  m_Script: {fileID: 11500000, guid: 9820a81ff9f4bc442a6b247d2c5734ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &4540383866231713862

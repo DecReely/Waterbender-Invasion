@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using WaterbenderInvasion.Attributes;
 using WaterbenderInvasion.Combat;

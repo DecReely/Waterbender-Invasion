@@ -4,16 +4,16 @@ namespace WaterbenderInvasion.Core
 {
     public class ActionScheduler : MonoBehaviour
     {
-        private IAction currentAction;
-        
+        IAction _currentAction;
+
         public void StartAction(IAction action)
         {
-            if (currentAction == action) return;
-            if (currentAction != null)
+            if (_currentAction == action) return;
+            if (_currentAction != null)
             {
-                currentAction.Cancel();
+                _currentAction.Cancel();
             }
-            currentAction = action;
+            _currentAction = action;
         }
 
         public void CancelCurrentAction()

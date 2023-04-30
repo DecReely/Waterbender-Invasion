@@ -1,7 +1,6 @@
 namespace WaterbenderInvasion.Core
 {
-    public interface IAction
-    {
-        public void Cancel();
+    public interface IAction {
+        void Cancel();
     }
 }
